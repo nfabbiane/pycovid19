@@ -34,7 +34,7 @@ raw_data = {'path'   : 'data/JHU',
 
 # plot__________________________________________________________________________
 
-# array of the name of the selected regions, set to None for the World
+# list of names of the selected regions, set to None for the World
 regions = ['Italy']
 
 
