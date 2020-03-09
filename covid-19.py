@@ -40,7 +40,7 @@ regions = ['Italy']
 
 # connection parameters_________________________________________________________
 
-proxy = {'https_proxy': 'proxy.onera:80'}
+proxy = {}
 
 
 
