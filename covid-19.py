@@ -115,25 +115,25 @@ ax.text(time[iM], new[iM], r'$%d~$' %(new[iM]),
 
 # active cases
 ax.plot(time[-1], active[-1], '.k', label='last point')
-ax.text(time[-1], active[-1],
+ax.text(time[-1]+dt.timedelta(days=1), active[-1],
         r'$~%d$ ($%.1f$%%)' %(active[-1], active[-1]/float(confirmed[-1])*100),
         va='bottom', ha='left')
 
 # new cases
 ax.plot(time[-1], new[-1], '.k')
-ax.text(time[-1], new[-1],
+ax.text(time[-1]+dt.timedelta(days=1), new[-1],
         r'$~%d$ ($%.1f$%%)' %(new[-1], new[-1]/float(confirmed[-1])*100),
         va='bottom', ha='left')
 
 # deaths
 ax.plot(time[-1], -deaths[-1], '.k')
-ax.text(time[-1], -deaths[-1],
+ax.text(time[-1]+dt.timedelta(days=1), -deaths[-1],
         r'$~%d$ ($%.1f$%%)' %(deaths[-1], deaths[-1]/float(confirmed[-1])*100),
         va='top', ha='left')
 
 # recovered
 ax.plot(time[-1], -recovered[-1]-deaths[-1], '.k')
-ax.text(time[-1], -recovered[-1]-deaths[-1],
+ax.text(time[-1]+dt.timedelta(days=1), -recovered[-1]-deaths[-1],
         r'$~%d$ ($%.1f$%%)' %(recovered[-1], recovered[-1]/float(confirmed[-1])*100),
         va='top', ha='left')
 
@@ -147,7 +147,7 @@ ax.set_ylim(np.array([-1, 1])*np.max(np.abs(ax.get_ylim())))
 # position (to fit the date)
 bb = ax.get_position()
 bb.y0+= (1-bb.y1)/3.; bb.y1+= (1-bb.y1)/3.;
-bb.x1-=    bb.x0 /2.; bb.x0-=    bb.x0 /4.;
+bb.x1-=    bb.x0 /1.5;bb.x0-=    bb.x0 /4.;
 ax.set_position(bb)
 
 # grid
