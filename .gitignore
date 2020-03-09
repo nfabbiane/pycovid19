@@ -1,0 +1,8 @@
+# temporary files
+*~ __pycache__/*
+
+# output
+figs/*
+
+# data
+data/*
