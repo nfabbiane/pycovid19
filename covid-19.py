@@ -14,6 +14,7 @@ import numpy as np
 import datetime as dt
 
 # visualization
+from matplotlib import rc
 from matplotlib import pyplot as plt
 
 # local libraries
@@ -80,6 +81,12 @@ new = np.array([0] + (confirmed[1:]-confirmed[:-1]).tolist())
 #
 # initialize figure_____________________________________________________________
 
+# force text to sans-serif
+rc('font', family='sans-serif')
+rc('text.latex', preamble=[r'\usepackage{cmbright}', r'\usepackage{amsmath}'])
+rc('text', usetex=True)
+
+# create figure and axes
 fig = plt.figure()
 ax  = plt.subplot(111)
 
@@ -115,26 +122,26 @@ ax.text(time[iM], new[iM], r'$%d~$' %(new[iM]),
 
 # active cases
 ax.plot(time[-1], active[-1], '.k', label='last point')
-ax.text(time[-1]+dt.timedelta(days=1), active[-1],
-        r'$~%d$ ($%.1f$%%)' %(active[-1], active[-1]/float(confirmed[-1])*100),
+ax.text(time[-1]+dt.timedelta(days=2), active[-1],
+        r'$%d~(%.1f\%%)$' %(active[-1], active[-1]/float(confirmed[-1])*100),
         va='bottom', ha='left')
 
 # new cases
 ax.plot(time[-1], new[-1], '.k')
-ax.text(time[-1]+dt.timedelta(days=1), new[-1],
-        r'$~%d$ ($%.1f$%%)' %(new[-1], new[-1]/float(confirmed[-1])*100),
+ax.text(time[-1]+dt.timedelta(days=2), new[-1],
+        r'$%d~(%.1f\%%)$' %(new[-1], new[-1]/float(confirmed[-1])*100),
         va='bottom', ha='left')
 
 # deaths
 ax.plot(time[-1], -deaths[-1], '.k')
-ax.text(time[-1]+dt.timedelta(days=1), -deaths[-1],
-        r'$~%d$ ($%.1f$%%)' %(deaths[-1], deaths[-1]/float(confirmed[-1])*100),
+ax.text(time[-1]+dt.timedelta(days=2), -deaths[-1],
+        r'$%d~(%.1f\%%)$' %(deaths[-1], deaths[-1]/float(confirmed[-1])*100),
         va='top', ha='left')
 
 # recovered
 ax.plot(time[-1], -recovered[-1]-deaths[-1], '.k')
-ax.text(time[-1]+dt.timedelta(days=1), -recovered[-1]-deaths[-1],
-        r'$~%d$ ($%.1f$%%)' %(recovered[-1], recovered[-1]/float(confirmed[-1])*100),
+ax.text(time[-1]+dt.timedelta(days=2), -recovered[-1]-deaths[-1],
+        r'$%d~(%.1f\%%)$' %(recovered[-1], recovered[-1]/float(confirmed[-1])*100),
         va='top', ha='left')
 
 
@@ -152,7 +159,7 @@ ax.set_position(bb)
 
 # grid
 ax.plot(ax.get_xlim(), [0., 0.], '-k', lw=.8)
-ax.grid('minor')
+ax.grid()
 
 # x ticks
 tks = [np.max(time)]
@@ -167,19 +174,19 @@ tks = ax.get_yticks()
 # - compute scale (avoid thousands)
 scale =  int(np.floor(np.log10(np.max(tks))/3))*3
 if scale != 0:
-	ax.text(0., 1., r'$\times 10^{%d}$' %(scale), transform=ax.transAxes)
+	ax.text(0., 1.01, r'$\times 10^{%d}$' %(scale), transform=ax.transAxes)
 # - fix ticks and compute labels
 tks = [np.round(tk/(10**scale))*(10**scale) for tk in tks]
 ax.set_yticks(tks)
 ax.set_yticklabels(['%d' %(np.abs(tk)/(10**scale)) for tk in tks])
 
 # labels and title
-ax.set_ylabel(r'inactive $\quad|\quad$ $~$active$~$')
+ax.set_ylabel('inactive~$\quad|\quad$~~active~\mbox{}')
 
 # title
 if isinstance(regions, list): title = ' + '.join(regions)
 else: title = 'World'
-ax.set_title('%s (total = %d)' %(title, confirmed[-1]))
+ax.set_title('%s (total = $%d$)' %(title, confirmed[-1]))
 
 # legend
 ax.legend(framealpha=1., loc='lower left')
