@@ -183,4 +183,4 @@ ax.legend(framealpha=1., loc='lower left')
 # save figure___________________________________________________________________
 
 if not(os.path.isdir('figs')): os.mkdir('figs')
-fig.savefig(os.path.join('figs', 'istogram.pdf'))
+fig.savefig(os.path.join('figs', 'histogram.pdf'))
