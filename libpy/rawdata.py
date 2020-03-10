@@ -133,7 +133,7 @@ def read_file_jhu(filename):
 	f = open(filename, 'r')
 	# read header (time-stamps)
 	line = f.readline().rstrip('\r\n').split(',')
-	time = [dt.datetime.strptime(t, '%m/%d/%y').date() for t in line[4:]]
+	time = [dt.datetime.strptime(t, '%m/%d/%y') for t in line[4:]]
 	# loop on entries
 	data_by_region={}
 	for l in f:

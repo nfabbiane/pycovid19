@@ -39,13 +39,14 @@ raw_data = {'path'   : 'data/JHU',
 # list of names of the selected regions. Set it to None for the World.
 figures = {'Italy' : ['Italy'],
            'France': ['France'],
-           'Europe': ['Austria', 'Belgium', 'Bulgaria',
-                      'Croatia', 'Cyprus', 'Czech Republic', 'Denmark',
-                      'Estonia', 'Finland', 'France', 'Germany', 'Greece',
-                      'Hungary', 'Ireland', 'Italy', 'Latvia', 'Lithuania',
-                      'Luxembourg', 'Malta', 'Netherlands', 'Poland', 'Portugal',
-                      'Romania', 'Slovakia', 'Slovenia', 'Spain', 'Sweden',
+           'Europe': ['Austria', 'Belgium', 'Bulgaria', 'Croatia', 'Cyprus',
+                      'Czech Republic', 'Denmark', 'Estonia', 'Finland',
+                      'France', 'Germany', 'Greece', 'Hungary', 'Ireland',
+                      'Italy', 'Latvia', 'Lithuania', 'Luxembourg', 'Malta',
+                      'Netherlands', 'Poland', 'Portugal', 'Romania', 'Slovakia',
+                      'Slovenia', 'Spain', 'Sweden',
                       'Switzerland', 'Norway', 'UK'],
+           'China' : ['Mainland China'],
            'World' : None }
 
 # number of points considered for exponential projection
@@ -106,17 +107,19 @@ for title, regions in figures.items():
 	active = confirmed - recovered - deaths
 
 	# compute new daily cases
-	new = np.array([0] + (confirmed[1:]-confirmed[:-1]).tolist())
+	dtime = (time[1:]-time[:-1])
+	timen = np.array([t + td/2. for t, td in zip(time[:-1], dtime)])
+	new   = confirmed[1:]-confirmed[:-1]
 
 
 	# compute exponential fit___________________________________________________
 
-	dtime = np.array([(t-time[-1]).days for t in time])
+	days = np.array([(t-time[-1]).days for t in time])
 
 	# comupte coefficients
-	active_coefs    = np.polyfit(dtime[-nexp:], np.log(active[-nexp:]), 1)
-	deaths_coefs    = np.polyfit(dtime[-nexp:], np.log(deaths[-nexp:]), 1)
-	recovered_coefs = np.polyfit(dtime[-nexp:], np.log(recovered[-nexp:]), 1)
+	active_coefs    = np.polyfit(days[-nexp:], np.log(active[-nexp:]), 1)
+	deaths_coefs    = np.polyfit(days[-nexp:], np.log(deaths[-nexp:]), 1)
+	recovered_coefs = np.polyfit(days[-nexp:], np.log(recovered[-nexp:]), 1)
 
 	# compute doubling time
 	time2_active    = np.log(2.)/active_coefs[0]
@@ -143,20 +146,20 @@ for title, regions in figures.items():
 	# plot new cases____________________________________________________________
 
 	hl = [] # collect handles for legend
-	hl+= ax.plot(time, new, '-k', label=r'new cases')
+	hl+= ax.plot(timen, new, '-k', label=r'new cases')
 
 
 	# exponential fits__________________________________________________________
 
 	# extend time
-	timee  = np.append(time[-nexp:], time[-1] + dt.timedelta(days=1))
-	dtimee = np.append(dtime[-nexp:], 1)
+	timee = np.append(time[-nexp:], time[-1] + dt.timedelta(days=1))
+	dayse = np.append(days[-nexp:], 1)
 
 	# plot projections
-	hl+= ax.plot(timee, np.exp(active_coefs[1]    + active_coefs[0]   *dtimee), '--k', zorder=0, label=r'exp. fit')
-	ax.plot(timee,-np.exp(deaths_coefs[1]    + deaths_coefs[0]   *dtimee), '--k', zorder=0)
-	ax.plot(timee,-np.exp(deaths_coefs[1]    + deaths_coefs[0]   *dtimee)
-				  -np.exp(recovered_coefs[1] + recovered_coefs[0]*dtimee), '--k', zorder=0)
+	hl+= ax.plot(timee, np.exp(active_coefs[1]+active_coefs[0]   *dayse), '--k', zorder=0, label=r'exp. fit')
+	ax.plot(timee,-np.exp(deaths_coefs[1]    + deaths_coefs[0]   *dayse), '--k', zorder=0)
+	ax.plot(timee,-np.exp(deaths_coefs[1]    + deaths_coefs[0]   *dayse)
+				  -np.exp(recovered_coefs[1] + recovered_coefs[0]*dayse), '--k', zorder=0)
 
 
 	# plot peak_________________________________________________________________
@@ -169,8 +172,8 @@ for title, regions in figures.items():
 
 	# new cases
 	iM = np.argmax(new)
-	ax.plot(time[iM], new[iM], '+k')
-	ax.text(time[iM], new[iM], r'$%d~$' %(new[iM]),
+	ax.plot(timen[iM], new[iM], '+k')
+	ax.text(timen[iM], new[iM], r'$%d~$' %(new[iM]),
 			va='bottom', ha='right')
 
 
@@ -183,7 +186,7 @@ for title, regions in figures.items():
 			va='bottom', ha='left')
 
 	# new cases
-	ax.plot(time[-1], new[-1], '.k')
+	ax.plot(timen[-1], new[-1], '.k')
 	ax.text(time[-1]+dt.timedelta(days=2), new[-1],
 			r'$%d~(%+.1f\%%)$' %(new[-1], new[-1]/float(confirmed[-2])*100),
 			va='bottom', ha='left')
@@ -217,7 +220,7 @@ for title, regions in figures.items():
 	tks.pop(-1)
 	# - fix ticks and compute labels
 	ax.set_xticks(tks)
-	ax.set_xticklabels([tk for tk in tks], rotation=30, ha='right')
+	ax.set_xticklabels([tk.date() for tk in tks], rotation=30, ha='right')
 
 	# y ticks
 	tks = ax.get_yticks()
