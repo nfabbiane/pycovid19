@@ -85,6 +85,10 @@ bb.y0+= (1-bb.y1)/3.; bb.y1+= (1-bb.y1)/3.;
 bb.x1-=    bb.x0 /1.5;bb.x0-=    bb.x0 /4.;
 ax.set_position(bb)
 
+# create twin ax for final values as ticks
+axt = ax.twinx()
+axt.set_position(ax.get_position())
+
 
 # loop__________________________________________________________________________
 
@@ -167,41 +171,42 @@ for title, regions in figures.items():
 	# active cases
 	iM = np.argmax(active)
 	hl+= ax.plot(time[iM], active[iM], '+k', label='maxima')
-	ax.text(time[iM], active[iM], r'$%d~$' %(active[iM]),
-			va='bottom', ha='right')
+	ax.text(time[iM], active[iM], r'$%d~$' %(active[iM]), va='bottom', ha='right')
 
 	# new cases
 	iM = np.argmax(new)
 	ax.plot(timen[iM], new[iM], '+k')
-	ax.text(timen[iM], new[iM], r'$%d~$' %(new[iM]),
-			va='bottom', ha='right')
+	ax.text(timen[iM], new[iM], r'$%d~$' %(new[iM]), va='bottom', ha='right')
 
 
 	# plot last data-point______________________________________________________
 
+	# initialize final point ticks and labels
+	tks = []; lbl = []
+
 	# active cases
 	hl+= ax.plot(time[-1], active[-1], '.k', label='last point')
-	ax.text(time[-1]+dt.timedelta(days=2), active[-1],
-			r'$%d~(%.1f\%%)$' %(active[-1], active[-1]/float(confirmed[-1])*100),
-			va='bottom', ha='left')
+	tks.append(active[-1])
+	lbl.append(r'$%d~(%.1f\%%)$' %(active[-1], active[-1]/float(confirmed[-1])*100))
 
 	# new cases
 	ax.plot(timen[-1], new[-1], '.k')
-	ax.text(time[-1]+dt.timedelta(days=2), new[-1],
-			r'$%d~(%+.1f\%%)$' %(new[-1], new[-1]/float(confirmed[-2])*100),
-			va='bottom', ha='left')
+	tks.append(new[-1])
+	lbl.append(r'$%d~(%+.1f\%%)$' %(new[-1], new[-1]/float(confirmed[-2])*100))
 
 	# deaths
 	ax.plot(time[-1], -deaths[-1], '.k')
-	ax.text(time[-1]+dt.timedelta(days=2), -deaths[-1],
-			r'$%d~(%.1f\%%)$' %(deaths[-1], deaths[-1]/float(confirmed[-1])*100),
-			va='top', ha='left')
+	tks.append(-deaths[-1])
+	lbl.append(r'$%d~(%.1f\%%)$' %(deaths[-1], deaths[-1]/float(confirmed[-1])*100))
 
 	# recovered
 	ax.plot(time[-1], -recovered[-1]-deaths[-1], '.k')
-	ax.text(time[-1]+dt.timedelta(days=2), -recovered[-1]-deaths[-1],
-			r'$%d~(%.1f\%%)$' %(recovered[-1], recovered[-1]/float(confirmed[-1])*100),
-			va='top', ha='left')
+	tks.append(-recovered[-1]-deaths[-1])
+	lbl.append(r'$%d~(%.1f\%%)$' %(recovered[-1], recovered[-1]/float(confirmed[-1])*100))
+
+	# add values and labels as tick of secondary axis
+	axt.set_yticks(tks)
+	axt.set_yticklabels(lbl)
 
 
 	# axes______________________________________________________________________
@@ -243,6 +248,9 @@ for title, regions in figures.items():
 	l1 = ax.legend(hh, [h.get_label() for h in hh], framealpha=1., loc='lower left')
 	l2 = ax.legend(hl, [h.get_label() for h in hl], framealpha=1., loc='upper left', ncol=len(hl))
 	ax.add_artist(l1)
+
+	# axis limits (secondary axis)
+	axt.set_ylim(ax.get_ylim())
 
 
 	# save figure_______________________________________________________________
