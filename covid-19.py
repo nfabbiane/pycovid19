@@ -185,7 +185,7 @@ for title, regions in figures.items():
 	# new cases
 	ax.plot(time[-1], new[-1], '.k')
 	ax.text(time[-1]+dt.timedelta(days=2), new[-1],
-			r'$%d~(%.1f\%%)$' %(new[-1], new[-1]/float(confirmed[-1])*100),
+			r'$%d~(%+.1f\%%)$' %(new[-1], new[-1]/float(confirmed[-2])*100),
 			va='bottom', ha='left')
 
 	# deaths
