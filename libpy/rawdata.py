@@ -83,12 +83,15 @@ class RawData:
 			if region in self.confirmed.keys():
 				for i, data in enumerate(self.confirmed[region]):
 					confirmed[i]+= data
+			else: print('WARNING! %s not found in confirmed' %(region))
 			if region in self.recovered.keys():
 				for i, data in enumerate(self.recovered[region]):
 					recovered[i]+= data
+			else: print('WARNING! %s not found in recovered' %(region))
 			if region in self.deaths.keys():
 				for i, data in enumerate(self.deaths[region]):
 					deaths[i]+= data
+			else: print('WARNING! %s not found in deaths' %(region))
 		# output
 		return confirmed, recovered, deaths
 	#___________________________________________________________________________
