@@ -1,7 +1,7 @@
 ##############################################################################80
 # Environment
 #
-PY = python
+PY = python3
 PY_FLAGS =
 
 
@@ -10,7 +10,8 @@ PY_FLAGS =
 ################################################################################
 # Definitions
 #
-name = covid-19
+name = visualize
+data = 'dpc'
 
 # library location______________________________________________________________
 LIB = libpy
@@ -41,8 +42,8 @@ clean-py:
 
 # Run___________________________________________________________________________
 $(name): $(MAIN)
-	@echo running $(MAIN) with $(PY)
-	@$(PY) $(PY_FLAGS) $(MAIN) $(PARSFLG) #> /dev/null
+	@echo running $(MAIN) with $(PY) with dataset $(data)
+	@$(PY) $(PY_FLAGS) $(MAIN) $(data) #> /dev/null
 
 # cleaning
 clean-data:

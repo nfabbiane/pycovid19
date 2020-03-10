@@ -50,6 +50,8 @@ class RawData:
 		# select reader
 		if self.data_fmt is 'jhu': # John Hopkins University
 			data = read_data_jhu(self)
+		if self.data_fmt is 'dpc': # Dipartimento della protezione Civile
+			data = read_data_dpc(self)
 		else: # default (John Hopkins University)
 			data = read_data_jhu(self)
 		# unpack data
@@ -150,5 +152,47 @@ def read_file_jhu(filename):
 			except: data_by_region[region][i]+= 0
 	# output
 	return time, data_by_region
+#_______________________________________________________________________________
+#
+def read_data_dpc(rawdata):
+	"""
+	"""
+	# modules
+	import os
+	import datetime as dt
+	# path to time-series files
+	timeseries_path = os.path.join(rawdata.path, 'dati-regioni')
+	# read confirmed cases
+	timeseries_file = os.path.join(timeseries_path, 'dpc-covid19-ita-regioni.csv')
+	# initilize output
+	time      = []
+	confirmed = {}
+	recovered = {}
+	deaths    = {}
+	# open file
+	f = open(timeseries_file, 'r')
+	# skip header
+	f.readline()
+	# loop on entries
+	for l in f:
+		# split line
+		line = l.rstrip('\r\n').rsplit(',')
+		# get time
+		t = dt.datetime.strptime(line[0], '%Y-%m-%d %H:%M:%S')
+		t = dt.datetime(*t.timetuple()[:3])
+		if not(t in time): time.append(t)
+		# get region name
+		region = line[3]
+		# get confirmed
+		if not(region in confirmed.keys()): confirmed[region]=[0]*(len(time)-1)
+		confirmed[region]+= [int(line[14])]
+		# get recovered
+		if not(region in recovered.keys()): recovered[region]=[0]*(len(time)-1)
+		recovered[region]+= [int(line[12])]
+		# get deaths
+		if not(region in deaths.keys()): deaths[region]=[0]*(len(time)-1)
+		deaths[region]+= [int(line[13])]
+	# output
+	return time, confirmed, recovered, deaths
 #_______________________________________________________________________________
 #

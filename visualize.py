@@ -7,7 +7,8 @@
 ################################################################################
 
 # system
-import os
+import os, sys
+import importlib
 
 # math 
 import numpy as np
@@ -26,28 +27,16 @@ import libpy.rawdata as rd
 ################################################################################
 # Parameters
 #
-# data origin___________________________________________________________________
+# data_set file_________________________________________________________________
 
-# John Hopkins University
-raw_data = {'path'   : 'data/JHU',
-            'git_url': 'https://github.com/CSSEGISandData/COVID-19.git'}
+if len(sys.argv) > 1: data_set = os.path.basename(sys.argv[1]).split('.')[0]
+else: data_set = 'jhu'
+
+# load data_set data
+ds = __import__(data_set)
 
 
-# plot__________________________________________________________________________
-
-# dictionary of figures: the key is the figure name, while the value is the
-# list of names of the selected regions. Set it to None for the World.
-figures = {'Italy' : ['Italy'],
-           'France': ['France'],
-           'Europe': ['Austria', 'Belgium', 'Bulgaria', 'Croatia', 'Cyprus',
-                      'Czech Republic', 'Denmark', 'Estonia', 'Finland',
-                      'France', 'Germany', 'Greece', 'Hungary', 'Ireland',
-                      'Italy', 'Latvia', 'Lithuania', 'Luxembourg', 'Malta',
-                      'Netherlands', 'Poland', 'Portugal', 'Romania', 'Slovakia',
-                      'Slovenia', 'Spain', 'Sweden',
-                      'Switzerland', 'Norway', 'UK'],
-           'China' : ['Mainland China'],
-           'World' : None }
+# common________________________________________________________________________
 
 # number of points considered for exponential projection
 nexp = 4
@@ -60,7 +49,7 @@ nexp = 4
 #
 # raw data______________________________________________________________________
 
-rawdata = rd.RawData(**raw_data)
+rawdata = rd.RawData(**ds.raw_data)
 
 
 
@@ -92,7 +81,7 @@ axt.set_position(ax.get_position())
 
 # loop__________________________________________________________________________
 
-for title, regions in figures.items():
+for title, regions in ds.figures.items():
 
 	# get time-series___________________________________________________________
 
