@@ -38,6 +38,9 @@ raw_data = {'path'   : 'data/JHU',
 # list of names of the selected regions, set to None for the World
 regions = ['Italy']
 
+# number of points considered for exponential projection
+nexp = 3
+
 
 # connection parameters_________________________________________________________
 
@@ -74,6 +77,21 @@ active = confirmed - recovered - deaths
 new = np.array([0] + (confirmed[1:]-confirmed[:-1]).tolist())
 
 
+# compute exponential fit_______________________________________________________
+
+dtime = np.array([(t-time[-1]).days for t in time])
+
+# comupte coefficients
+active_coefs    = np.polyfit(dtime[-nexp:], np.log(active[-nexp:]), 1)
+deaths_coefs    = np.polyfit(dtime[-nexp:], np.log(deaths[-nexp:]), 1)
+recovered_coefs = np.polyfit(dtime[-nexp:], np.log(recovered[-nexp:]), 1)
+
+# compute doubling time
+time2_active    = np.log(2.)/active_coefs[0]
+time2_deaths    = np.log(2.)/deaths_coefs[0]
+time2_recovered = np.log(2.)/recovered_coefs[0]
+
+
 
 
 ################################################################################
@@ -93,14 +111,30 @@ ax  = plt.subplot(111)
 
 # plot histograms_______________________________________________________________
 
-ax.bar(time,  active   , color=[1., .8, 0.], label=r'active cases')
-ax.bar(time, -deaths   , color=[1., 0., 0.], label=r'deaths')
-ax.bar(time, -recovered, color=[0., 0., 1.], label=r'recovered', bottom=-deaths)
+ax.bar(time,  active   , color=[1., .8, 0.],
+       label=r'active cases ($\times 2$ in $%.1f$ days)' %(time2_active))
+ax.bar(time, -deaths   , color=[1., 0., 0.], 
+       label=r'deaths ($\times 2$ in $%.1f$ days)' %(time2_deaths))
+ax.bar(time, -recovered, color=[0., 0., 1.], bottom=-deaths, 
+       label=r'recovered ($\times 2$ in $%.1f$ days)' %(time2_recovered))
 
 
 # plot new cases________________________________________________________________
 
 ax.plot(time, new, '-k', label=r'new cases')
+
+
+# exponential fits______________________________________________________________
+
+# extend time
+timee  = np.append(time[-nexp:], time[-1] + dt.timedelta(days=1))
+dtimee = np.append(dtime[-nexp:], 1)
+
+# plot projections
+ax.plot(timee, np.exp(active_coefs[1]    + active_coefs[0]   *dtimee), '--k', zorder=0)
+ax.plot(timee,-np.exp(deaths_coefs[1]    + deaths_coefs[0]   *dtimee), '--k', zorder=0)
+ax.plot(timee,-np.exp(deaths_coefs[1]    + deaths_coefs[0]   *dtimee)
+              -np.exp(recovered_coefs[1] + recovered_coefs[0]*dtimee), '--k', zorder=0)
 
 
 # plot peak_____________________________________________________________________
@@ -196,3 +230,4 @@ ax.legend(framealpha=1., loc='lower left')
 
 if not(os.path.isdir('figs')): os.mkdir('figs')
 fig.savefig(os.path.join('figs', 'histogram.pdf'))
+fig.savefig(os.path.join('figs', 'histogram.png'))

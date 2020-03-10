@@ -143,7 +143,8 @@ def read_file_jhu(filename):
 			data_by_region[region] = [0]*len(time)
 		# add data to region
 		for i, data in enumerate(line[4:]):
-			data_by_region[region][i]+= int(data)
+			try: data_by_region[region][i]+= int(data)
+			except: data_by_region[region][i]+= 0
 	# output
 	return time, data_by_region
 #_______________________________________________________________________________
