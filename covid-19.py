@@ -39,12 +39,13 @@ raw_data = {'path'   : 'data/JHU',
 # list of names of the selected regions. Set it to None for the World.
 figures = {'Italy' : ['Italy'],
            'France': ['France'],
-           'EU'    : ['Austria', 'Belgium', 'Bulgaria', 'Croatia', 'Cyprus', 
-                      'Czech Republic', 'Denmark', 'Estonia', 'Finland',
-                      'France', 'Germany', 'Greece', 'Hungary', 'Ireland',
-                      'Italy', 'Latvia', 'Lithuania', 'Luxembourg', 'Malta',
-                      'Netherlands', 'Poland', 'Portugal', 'Romania',
-                      'Slovakia', 'Slovenia', 'Spain', 'Sweden'],
+           'Europe': ['Austria', 'Belgium', 'Bulgaria',
+                      'Croatia', 'Cyprus', 'Czech Republic', 'Denmark',
+                      'Estonia', 'Finland', 'France', 'Germany', 'Greece',
+                      'Hungary', 'Ireland', 'Italy', 'Latvia', 'Lithuania',
+                      'Luxembourg', 'Malta', 'Netherlands', 'Poland', 'Portugal',
+                      'Romania', 'Slovakia', 'Slovenia', 'Spain', 'Sweden',
+                      'Switzerland', 'Norway', 'UK'],
            'World' : None }
 
 # number of points considered for exponential projection
