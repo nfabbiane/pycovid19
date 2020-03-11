@@ -17,6 +17,7 @@ import datetime as dt
 # visualization
 from matplotlib import rc
 from matplotlib import pyplot as plt
+from matplotlib import patches as ptc
 
 # local libraries
 import libpy.rawdata as rd
@@ -39,7 +40,7 @@ ds = __import__(data_set)
 # common________________________________________________________________________
 
 # number of points considered for exponential projection
-nexp = 4
+nexp = 3
 
 
 
@@ -115,10 +116,10 @@ for title, regions in ds.figures.items():
 	intensive_coefs = np.polyfit(days[-nexp:], np.log(intensive[-nexp:]), 1)
 
 	# compute doubling time
-	time2_active    = np.log(2.)/active_coefs[0]
-	time2_deaths    = np.log(2.)/deaths_coefs[0]
-	time2_recovered = np.log(2.)/recovered_coefs[0]
-	time2_intensive = np.log(2.)/intensive_coefs[0]
+	Dday_active    = np.exp(active_coefs[0])-1.
+	Dday_deaths    = np.exp(deaths_coefs[0])-1.
+	Dday_recovered = np.exp(recovered_coefs[0])-1.
+	Dday_intensive = np.exp(intensive_coefs[0])-1.
 
 
 	# re-initialize figure______________________________________________________
@@ -129,14 +130,16 @@ for title, regions in ds.figures.items():
 	# plot histograms___________________________________________________________
 
 	hh = [] # collect handles for legend
-	hh.append(ax.bar(time,  active   , color=[1., .8, 0.],
-	          label=r'total active cases ($\times 2$ in $%.1f$ days)' %(time2_active)))
-	hh.append(ax.bar(time,  intensive, color=[1., .5, 0.],
-	          label=r'intensive-care ($\times 2$ in $%.1f$ days)' %(time2_intensive)))
-	hh.append(ax.bar(time, -deaths   , color=[1., 0., 0.],
-	          label=r'deaths ($\times 2$ in $%.1f$ days)' %(time2_deaths)))
-	hh.append(ax.bar(time, -recovered, color=[0., 0., 1.], bottom=-deaths,
-	          label=r'recovered ($\times 2$ in $%.1f$ days)' %(time2_recovered)))
+	hh.append(ax.bar(time,  active   , color=[1., .8, 0.], label=r'total active cases'))
+	hh.append(ax.bar(time,  intensive, color=[1., .5, 0.], label=r'intensive-care'))
+	hh.append(ax.bar(time, -deaths   , color=[1., 0., 0.], label=r'deaths'))
+	hh.append(ax.bar(time, -recovered, color=[0., 0., 1.], bottom=-deaths, label=r'recovered'))
+	
+	# add projection to legend
+	hh.append(ptc.Patch(color='none', label=r'$%+.1f\%%$/day' %(Dday_active*100)))
+	hh.append(ptc.Patch(color='none', label=r'$%+.1f\%%$/day' %(Dday_intensive*100)))
+	hh.append(ptc.Patch(color='none', label=r'$%+.1f\%%$/day' %(Dday_deaths*100)))
+	hh.append(ptc.Patch(color='none', label=r'$%+.1f\%%$/day' %(Dday_recovered*100)))
 
 
 	# plot new cases____________________________________________________________
@@ -239,7 +242,7 @@ for title, regions in ds.figures.items():
 	ax.set_title('%s: $%d$ confirmed cases ($%+.1f\%%$)' %(title, confirmed[-1], new[-1]/confirmed[-2]*100))
 
 	# legend(s)
-	l1 = ax.legend(hh, [h.get_label() for h in hh], framealpha=1., loc='lower left')
+	l1 = ax.legend(hh, [h.get_label() for h in hh], framealpha=1., loc='lower left', ncol=2)
 	l2 = ax.legend(hl, [h.get_label() for h in hl], framealpha=1., loc='upper left', ncol=len(hl))
 	ax.add_artist(l1)
 
