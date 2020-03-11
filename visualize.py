@@ -239,7 +239,7 @@ for title, regions in ds.figures.items():
 	ax.set_ylabel('inactive~$\quad|\quad$~~active~\mbox{}')
 
 	# title
-	ax.set_title('%s: $%d$ confirmed cases ($%+.1f\%%$)' %(title, confirmed[-1], new[-1]/confirmed[-2]*100))
+	ax.set_title('%s -- $%d$ confirmed cases ($%+.1f\%%$)' %(title, confirmed[-1], new[-1]/confirmed[-2]*100))
 
 	# legend(s)
 	l1 = ax.legend(hh, [h.get_label() for h in hh], framealpha=1., loc='lower left', ncol=2)
