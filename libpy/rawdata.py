@@ -17,10 +17,12 @@ class RawData:
 		self.git_url   = git_url
 		self.git_env   = git_env
 		self.data_fmt  = data_fmt
-		self.time      = []
-		self.confirmed = []
-		self.recovered = []
-		self.deaths    = []
+		self.time      = {}
+		self.confirmed = {}
+		self.recovered = {}
+		self.deaths    = {}
+		self.active    = {}
+		self.intensive = {}
 		# initialize
 		self.update_git()
 		# read data
@@ -59,6 +61,8 @@ class RawData:
 		self.confirmed = data[1]
 		self.recovered = data[2]
 		self.deaths    = data[3]
+		self.active    = data[4]
+		self.intensive = data[5]
 	#___________________________________________________________________________
 	#
 	def get_time(self):
@@ -80,6 +84,8 @@ class RawData:
 		confirmed = [0]*len(self.time)
 		recovered = [0]*len(self.time)
 		deaths    = [0]*len(self.time)
+		active    = [0]*len(self.time)
+		intensive = [0]*len(self.time)
 		# loop on regions
 		for region in regions:
 			if region in self.confirmed.keys():
@@ -94,8 +100,16 @@ class RawData:
 				for i, data in enumerate(self.deaths[region]):
 					deaths[i]+= data
 			else: print('WARNING! %s not found in deaths' %(region))
+			if region in self.active.keys():
+				for i, data in enumerate(self.active[region]):
+					active[i]+= data
+			else: print('WARNING! %s not found in active' %(region))
+			if region in self.intensive.keys():
+				for i, data in enumerate(self.intensive[region]):
+					intensive[i]+= data
+			else: print('WARNING! %s not found in intensive' %(region))
 		# output
-		return confirmed, recovered, deaths
+		return confirmed, recovered, deaths, active, intensive
 	#___________________________________________________________________________
 	#
 
@@ -122,8 +136,16 @@ def read_data_jhu(rawdata):
 	# read deaths
 	timeseries_file = os.path.join(timeseries_path, 'time_series_19-covid-Deaths.csv')
 	time, deaths = read_file_jhu(timeseries_file)
+	# compute active cases (and dummy intensive care)
+	active = {}; intensive = {}
+	for region in confirmed.keys():
+		active[region]    = [0]*len(confirmed[region])
+		intensive[region] = [0]*len(confirmed[region])
+		for i in range(len(confirmed[region])):
+			active[region][i] = confirmed[region][i]
+			active[region][i]-= recovered[region][i] + deaths[region][i]
 	# output
-	return time, confirmed, recovered, deaths
+	return time, confirmed, recovered, deaths, active, intensive
 #_______________________________________________________________________________
 #
 def read_file_jhu(filename):
@@ -169,6 +191,8 @@ def read_data_dpc(rawdata):
 	confirmed = {}
 	recovered = {}
 	deaths    = {}
+	active    = {}
+	intensive = {}
 	# open file
 	f = open(timeseries_file, 'r')
 	# skip header
@@ -192,7 +216,13 @@ def read_data_dpc(rawdata):
 		# get deaths
 		if not(region in deaths.keys()): deaths[region]=[0]*(len(time)-1)
 		deaths[region]+= [int(line[13])]
+		# get active
+		if not(region in active.keys()): active[region]=[0]*(len(time)-1)
+		active[region]+= [int(line[10])]
+		# get intensive
+		if not(region in intensive.keys()): intensive[region]=[0]*(len(time)-1)
+		intensive[region]+= [int(line[7])]
 	# output
-	return time, confirmed, recovered, deaths
+	return time, confirmed, recovered, deaths, active, intensive
 #_______________________________________________________________________________
 #

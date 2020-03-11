@@ -89,15 +89,14 @@ for title, regions in ds.figures.items():
 	time = np.array(rawdata.get_time())
 
 	# cumulative data for the requested regions
-	confirmed, recovered, deaths = rawdata.get_data_for_regions(regions)
+	confirmed, recovered, deaths, active, intensive = rawdata.get_data_for_regions(regions)
 
 	# transform in numpy arrays
 	confirmed = np.array(confirmed)
 	recovered = np.array(recovered)
 	deaths    = np.array(deaths)
-
-	# compute active cases
-	active = confirmed - recovered - deaths
+	active    = np.array(active)
+	intensive = np.array(intensive)
 
 	# compute new daily cases
 	dtime = (time[1:]-time[:-1])
@@ -113,11 +112,13 @@ for title, regions in ds.figures.items():
 	active_coefs    = np.polyfit(days[-nexp:], np.log(active[-nexp:]), 1)
 	deaths_coefs    = np.polyfit(days[-nexp:], np.log(deaths[-nexp:]), 1)
 	recovered_coefs = np.polyfit(days[-nexp:], np.log(recovered[-nexp:]), 1)
+	intensive_coefs = np.polyfit(days[-nexp:], np.log(intensive[-nexp:]), 1)
 
 	# compute doubling time
 	time2_active    = np.log(2.)/active_coefs[0]
 	time2_deaths    = np.log(2.)/deaths_coefs[0]
 	time2_recovered = np.log(2.)/recovered_coefs[0]
+	time2_intensive = np.log(2.)/intensive_coefs[0]
 
 
 	# re-initialize figure______________________________________________________
@@ -129,7 +130,9 @@ for title, regions in ds.figures.items():
 
 	hh = [] # collect handles for legend
 	hh.append(ax.bar(time,  active   , color=[1., .8, 0.],
-	          label=r'active cases ($\times 2$ in $%.1f$ days)' %(time2_active)))
+	          label=r'total active cases ($\times 2$ in $%.1f$ days)' %(time2_active)))
+	hh.append(ax.bar(time,  intensive, color=[1., .5, 0.],
+	          label=r'intensive-care ($\times 2$ in $%.1f$ days)' %(time2_intensive)))
 	hh.append(ax.bar(time, -deaths   , color=[1., 0., 0.],
 	          label=r'deaths ($\times 2$ in $%.1f$ days)' %(time2_deaths)))
 	hh.append(ax.bar(time, -recovered, color=[0., 0., 1.], bottom=-deaths,
@@ -150,6 +153,7 @@ for title, regions in ds.figures.items():
 
 	# plot projections
 	hl+= ax.plot(timee, np.exp(active_coefs[1]+active_coefs[0]   *dayse), '--k', zorder=0, label=r'exp. fit')
+	ax.plot(timee, np.exp(intensive_coefs[1] + intensive_coefs[0]*dayse), '--k', zorder=0)
 	ax.plot(timee,-np.exp(deaths_coefs[1]    + deaths_coefs[0]   *dayse), '--k', zorder=0)
 	ax.plot(timee,-np.exp(deaths_coefs[1]    + deaths_coefs[0]   *dayse)
 				  -np.exp(recovered_coefs[1] + recovered_coefs[0]*dayse), '--k', zorder=0)
@@ -159,13 +163,18 @@ for title, regions in ds.figures.items():
 
 	# active cases
 	iM = np.argmax(active)
-	hl+= ax.plot(time[iM], active[iM], '+k', label='maxima')
-	ax.text(time[iM], active[iM], r'$%d~$' %(active[iM]), va='bottom', ha='right')
+	hl+= ax.plot(time[iM], active[iM], '.k', label='maxima')
+	ax.text(time[iM], active[iM], r'$%d~$' %(active[iM]), va='bottom', ha='center')
+
+	# intensive-care cases
+	iM = np.argmax(intensive)
+	ax.plot(time[iM], intensive[iM], '.k')
+	ax.text(time[iM], intensive[iM], r'$%d~$' %(intensive[iM]), va='bottom', ha='center')
 
 	# new cases
 	iM = np.argmax(new)
-	ax.plot(timen[iM], new[iM], '+k')
-	ax.text(timen[iM], new[iM], r'$%d~$' %(new[iM]), va='bottom', ha='right')
+	ax.plot(timen[iM], new[iM], '.k')
+	ax.text(timen[iM], new[iM], r'$%d~$' %(new[iM]), va='bottom', ha='center')
 
 
 	# plot last data-point______________________________________________________
@@ -174,22 +183,18 @@ for title, regions in ds.figures.items():
 	tks = []; lbl = []
 
 	# active cases
-	hl+= ax.plot(time[-1], active[-1], '.k', label='last point')
 	tks.append(active[-1])
 	lbl.append(r'$%d~(%.1f\%%)$' %(active[-1], active[-1]/float(confirmed[-1])*100))
 
-	# new cases
-	ax.plot(timen[-1], new[-1], '.k')
-	tks.append(new[-1])
-	lbl.append(r'$%d~(%+.1f\%%)$' %(new[-1], new[-1]/float(confirmed[-2])*100))
+	# intensive-care cases
+	tks.append(intensive[-1])
+	lbl.append(r'$%d~(%.1f\%%)$' %(intensive[-1], intensive[-1]/float(confirmed[-1])*100))
 
 	# deaths
-	ax.plot(time[-1], -deaths[-1], '.k')
 	tks.append(-deaths[-1])
 	lbl.append(r'$%d~(%.1f\%%)$' %(deaths[-1], deaths[-1]/float(confirmed[-1])*100))
 
 	# recovered
-	ax.plot(time[-1], -recovered[-1]-deaths[-1], '.k')
 	tks.append(-recovered[-1]-deaths[-1])
 	lbl.append(r'$%d~(%.1f\%%)$' %(recovered[-1], recovered[-1]/float(confirmed[-1])*100))
 
@@ -231,7 +236,7 @@ for title, regions in ds.figures.items():
 	ax.set_ylabel('inactive~$\quad|\quad$~~active~\mbox{}')
 
 	# title
-	ax.set_title('%s (total = $%d$)' %(title, confirmed[-1]))
+	ax.set_title('%s: $%d$ confirmed cases ($%+.1f\%%$)' %(title, confirmed[-1], new[-1]/confirmed[-2]*100))
 
 	# legend(s)
 	l1 = ax.legend(hh, [h.get_label() for h in hh], framealpha=1., loc='lower left')

@@ -11,11 +11,11 @@ Light visualisation tool in Python for the statics of COVID-19 spreading
 
 To visualize the statistics, run the command:
 	
-	make
+	make data=<data-set-name>
 	
 or
 	
-	python3 covid-19.py
+	python3 visualize.py <data-set-name>
 	
 
 The visualisation parameters set in the initial part of the script.
