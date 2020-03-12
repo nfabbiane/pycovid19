@@ -21,4 +21,6 @@ raw_data = {'path'    : 'data/DPC',
 figures = {'Lombardia' : ['Lombardia'],
            'Veneto'    : ['Veneto'],
            'Emilia-Romagna': ['Emilia Romagna'],
+           'Lazio'     : ['Lazio'],
+           'Piemonte'  : ['Piemonte'],
            'Italia'    : None }
