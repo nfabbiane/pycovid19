@@ -101,7 +101,7 @@ for title, regions in ds.figures.items():
 
 	# compute new daily cases
 	dtime = (time[1:]-time[:-1])
-	timen = np.array([t + td/2. for t, td in zip(time[:-1], dtime)])
+	timen = np.array([t + td/2 for t, td in zip(time[:-1], dtime)])
 	new   = confirmed[1:]-confirmed[:-1]
 
 
@@ -239,7 +239,7 @@ for title, regions in ds.figures.items():
 	ax.set_ylabel('inactive~$\quad|\quad$~~active~\mbox{}')
 
 	# title
-	ax.set_title('%s -- $%d$ confirmed cases ($%+.1f\%%$)' %(title, confirmed[-1], new[-1]/confirmed[-2]*100))
+	ax.set_title('%s -- $%d$ confirmed cases ($%+.1f\%%$)' %(title, confirmed[-1], new[-1]/float(confirmed[-2])*100))
 
 	# legend(s)
 	l1 = ax.legend(hh, [h.get_label() for h in hh], framealpha=1., loc='lower left', ncol=2)
