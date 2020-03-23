@@ -8,10 +8,10 @@
 
 # system
 import os, sys
-import importlib
 
 # math 
 import numpy as np
+from scipy import optimize as spo
 import datetime as dt
 
 # visualization
@@ -39,8 +39,8 @@ ds = __import__(data_set)
 
 # common________________________________________________________________________
 
-# number of points considered for exponential projection
-nexp = 3
+# number of days in the future
+future = 7
 
 
 
@@ -88,6 +88,9 @@ for title, regions in ds.figures.items():
 
 	# time
 	time = np.array(rawdata.get_time())
+	
+	print('')
+	print('%s: %s' %(title, time[-1]))
 
 	# cumulative data for the requested regions
 	confirmed, recovered, deaths, active, intensive = rawdata.get_data_for_regions(regions)
@@ -100,26 +103,67 @@ for title, regions in ds.figures.items():
 	intensive = np.array(intensive)
 
 	# compute new daily cases
-	dtime = (time[1:]-time[:-1])
-	timen = np.array([t + td/2 for t, td in zip(time[:-1], dtime)])
-	new   = confirmed[1:]-confirmed[:-1]
+	new   = np.append([0], confirmed[1:]-confirmed[:-1])
+
+	# compute  daily delta
+	Dday_confirmed = (confirmed[-1]-confirmed[-2])/float(confirmed[-2])
+	Dday_active    = (active[-1]   -active[-2]   )/float(active[-2])
+	Dday_deaths    = (deaths[-1]   -deaths[-2]   )/float(deaths[-2])
+	Dday_recovered = (recovered[-1]-recovered[-2])/float(recovered[-2])
+	Dday_intensive = (intensive[-1]-intensive[-2])/float(intensive[-2])
 
 
-	# compute exponential fit___________________________________________________
+	# compute logistic fit______________________________________________________
 
 	days = np.array([(t-time[-1]).days for t in time])
 
-	# comupte coefficients
-	active_coefs    = np.polyfit(days[-nexp:], np.log(active[-nexp:]), 1)
-	deaths_coefs    = np.polyfit(days[-nexp:], np.log(deaths[-nexp:]), 1)
-	recovered_coefs = np.polyfit(days[-nexp:], np.log(recovered[-nexp:]), 1)
-	intensive_coefs = np.polyfit(days[-nexp:], np.log(intensive[-nexp:]), 1)
+	# define sigmoid function
+	def sigmoid(x, A, a, b):
+		return A/(1. + np.exp((b-x)/a))
 
-	# compute doubling time
-	Dday_active    = np.exp(active_coefs[0])-1.
-	Dday_deaths    = np.exp(deaths_coefs[0])-1.
-	Dday_recovered = np.exp(recovered_coefs[0])-1.
-	Dday_intensive = np.exp(intensive_coefs[0])-1.
+	# define sigmoid function
+	def dsigmoiddx(x, A, a, b):
+		return A/(1. + np.exp((b-x)/a))**2 * np.exp((b-x)/a) / a
+
+	# define sigmoid function
+	def fitfun(x, C, ac, bc, D, ad, bd, R, ar, br):
+		R = C-D
+		return [[sigmoid(xi, C, ac, bc),
+		         sigmoid(xi, D, ad, bd),
+		         sigmoid(xi, R, ar, br)] for xi in x]
+
+	# define error function
+	def fiterr(ps, Xs, Ys):
+		ys = fitfun(Xs, *ps)
+		error = np.sum((np.array(Ys) - np.array(ys))**2)
+		return error
+
+	# comupte coefficients
+	Ys = [[c, d, r] for c, d, r in zip(confirmed, deaths, recovered)]
+	p0 =  (2*confirmed[-1], 1., future,
+	       2*   deaths[-1], 1., future,
+	       2*recovered[-1], 1., future)
+	bd = ((confirmed[-1], np.inf), ( 1., np.inf), (-np.inf, np.inf),
+	      (   deaths[-1], np.inf), ( 1., np.inf), (-np.inf, np.inf),
+	      (recovered[-1], np.inf), ( 1., np.inf), (-np.inf, np.inf))
+	sol = spo.minimize(fiterr, args=(days, Ys), x0=p0, bounds=bd)
+	confirmed_psig= sol.x[0:3]
+	deaths_psig   = sol.x[3:6]
+	recovered_psig= sol.x[6:9]; recovered_psig[0]=confirmed_psig[0]-deaths_psig[0]
+	print('           |      today      |    tomorrow     | final  ')
+	print('-----------+-----------------+-----------------+--------')
+	print(' confirmed | %6d (%+6d) | %6d (%+6d) | %6d'
+	      %(confirmed[-1], confirmed[-1]-confirmed[-2],
+	        int(sigmoid(1, *confirmed_psig)), int(dsigmoiddx(1, *confirmed_psig)),
+	        int(confirmed_psig[0])))
+	print(' deaths    | %6d (%+6d) | %6d (%+6d) | %6d'
+	      %(deaths[-1], deaths[-1]-deaths[-2],
+	        int(sigmoid(1, *deaths_psig)), int(dsigmoiddx(1, *deaths_psig)),
+	        int(deaths_psig[0])))
+	print(' recovered | %6d (%+6d) | %6d (%+6d) | %6d'
+	      %(recovered[-1], recovered[-1]-recovered[-2],
+	        int(sigmoid(1, *recovered_psig)), int(dsigmoiddx(1, *recovered_psig)),
+	        int(recovered_psig[0])))
 
 
 	# re-initialize figure______________________________________________________
@@ -145,21 +189,25 @@ for title, regions in ds.figures.items():
 	# plot new cases____________________________________________________________
 
 	hl = [] # collect handles for legend
-	hl+= ax.plot(timen, new, '-k', label=r'new cases')
+	hl+= ax.plot(time, new, '-k', label=r'new cases')
 
 
 	# exponential fits__________________________________________________________
+	
+	# compute x0
+	past = confirmed_psig[2] - confirmed_psig[1]*np.log(confirmed_psig[0]/1.-1.)
+	past = int(np.max([past, np.min(days)]))
 
 	# extend time
-	timee = np.append(time[-nexp:], time[-1] + dt.timedelta(days=1))
-	dayse = np.append(days[-nexp:], 1)
+	dayse = np.array(range(past, int(future)+1))
+	timee = np.array([time[-1] + dt.timedelta(days=d) for d in dayse])
 
-	# plot projections
-	hl+= ax.plot(timee, np.exp(active_coefs[1]+active_coefs[0]   *dayse), '--k', zorder=0, label=r'exp. fit')
-	ax.plot(timee, np.exp(intensive_coefs[1] + intensive_coefs[0]*dayse), '--k', zorder=0)
-	ax.plot(timee,-np.exp(deaths_coefs[1]    + deaths_coefs[0]   *dayse), '--k', zorder=0)
-	ax.plot(timee,-np.exp(deaths_coefs[1]    + deaths_coefs[0]   *dayse)
-				  -np.exp(recovered_coefs[1] + recovered_coefs[0]*dayse), '--k', zorder=0)
+	# plot projections - sigmoid
+	ax.plot(timee, -sigmoid(dayse, *deaths_psig)-sigmoid(dayse, *recovered_psig), '--', color=[0., 0., 1.], lw=.8)
+	ax.plot(timee, -sigmoid(dayse, *deaths_psig)                                , '--', color=[1., 0., 0.], lw=.8)
+	ax.plot(timee, -sigmoid(dayse, *deaths_psig)-sigmoid(dayse, *recovered_psig)
+	               +sigmoid(dayse, *confirmed_psig)                             , '--', color=[1., .8, 0.], lw=.8)
+	hl+= ax.plot(timee,  dsigmoiddx(dayse, *confirmed_psig), '--', color=[0., 0., 0.], lw=.8, label=r'logistic fit')
 
 
 	# plot peak_________________________________________________________________
@@ -167,17 +215,17 @@ for title, regions in ds.figures.items():
 	# active cases
 	iM = np.argmax(active)
 	hl+= ax.plot(time[iM], active[iM], '.k', label='maxima')
-	ax.text(time[iM], active[iM], r'$%d~$' %(active[iM]), va='bottom', ha='center')
+	ax.text(time[iM], active[iM], r'$~%d~$' %(active[iM]), va='bottom', ha='left')
 
 	# intensive-care cases
 	iM = np.argmax(intensive)
 	ax.plot(time[iM], intensive[iM], '.k')
-	ax.text(time[iM], intensive[iM], r'$%d~$' %(intensive[iM]), va='bottom', ha='center')
+	ax.text(time[iM], intensive[iM], r'$~%d~$' %(intensive[iM]), va='top', ha='left')
 
 	# new cases
 	iM = np.argmax(new)
-	ax.plot(timen[iM], new[iM], '.k')
-	ax.text(timen[iM], new[iM], r'$%d~$' %(new[iM]), va='bottom', ha='center')
+	ax.plot(time[iM], new[iM], '.k')
+	ax.text(time[iM], new[iM], r'$~%d~$' %(new[iM]), va='bottom', ha='left')
 
 
 	# plot last data-point______________________________________________________
@@ -189,9 +237,13 @@ for title, regions in ds.figures.items():
 	tks.append(active[-1])
 	lbl.append(r'$%d~(%.1f\%%)$' %(active[-1], active[-1]/float(confirmed[-1])*100))
 
+	# new cases
+	tks.append(new[-1])
+	lbl.append(r'$%d~(%.1f\%%)$' %(new[-1], new[-1]/float(confirmed[-1])*100))
+
 	# intensive-care cases
-	tks.append(intensive[-1])
-	lbl.append(r'$%d~(%.1f\%%)$' %(intensive[-1], intensive[-1]/float(confirmed[-1])*100))
+	#tks.append(intensive[-1])
+	#lbl.append(r'$%d~(%.1f\%%\mbox{~actives})$' %(intensive[-1], intensive[-1]/float(active[-1])*100))
 
 	# deaths
 	tks.append(-deaths[-1])
@@ -209,16 +261,17 @@ for title, regions in ds.figures.items():
 	# axes______________________________________________________________________
 
 	# axis limits
-	ax.set_xlim([np.min(time)-dt.timedelta(days=1), np.max(time)+dt.timedelta(days=1)])
-	ax.set_ylim(np.array([-1, 1])*np.max(np.abs(ax.get_ylim())))
-
+	ax.set_xlim([np.max(time)+dt.timedelta(days=past), np.max(time)+dt.timedelta(days=future)])
+	ax.set_ylim(np.array([-1, 1])*confirmed_psig[0])
+	
 	# grid
 	ax.plot(ax.get_xlim(), [0., 0.], '-k', lw=.8)
 	ax.grid()
 
 	# x ticks
-	tks = [np.max(time)]
-	while tks[-1] >= np.min(time): tks+= [tks[-1]-dt.timedelta(days=7)]
+	tks = [np.max(time)+dt.timedelta(days=future)]
+	while tks[-1] >= np.max(time)+dt.timedelta(days=past):
+		tks+= [tks[-1]-dt.timedelta(days=7)]
 	tks.pop(-1)
 	# - fix ticks and compute labels
 	ax.set_xticks(tks)
@@ -239,14 +292,15 @@ for title, regions in ds.figures.items():
 	ax.set_ylabel('inactive~$\quad|\quad$~~active~\mbox{}')
 
 	# title
-	ax.set_title('%s -- $%d$ confirmed cases ($%+.1f\%%$)' %(title, confirmed[-1], new[-1]/float(confirmed[-2])*100))
+	ax.set_title('%s -- $%d$ confirmed cases' %(title, confirmed[-1]))
 
 	# legend(s)
 	l1 = ax.legend(hh, [h.get_label() for h in hh], framealpha=1., loc='lower left', ncol=2)
-	l2 = ax.legend(hl, [h.get_label() for h in hl], framealpha=1., loc='upper left', ncol=len(hl))
+	l2 = ax.legend(hl, [h.get_label() for h in hl], framealpha=1., loc='upper left', ncol=1)
 	ax.add_artist(l1)
 
 	# axis limits (secondary axis)
+	ax.set_ylim(np.array([-1, 1])*confirmed_psig[0])
 	axt.set_ylim(ax.get_ylim())
 
 

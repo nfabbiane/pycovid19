@@ -9,17 +9,14 @@
 
 # data-set______________________________________________________________________
 
-raw_data = {'path'    : 'data/DPC',
-            'git_url' : 'https://github.com/pcm-dpc/COVID-19',
-            'data_fmt': 'dpc'}
+raw_data = {'path'    : 'data/opencovid19-fr',
+            'git_url' : 'https://github.com/opencovid19-fr/data.git',
+            'data_fmt': 'ofr'}
 
 
 # figures_______________________________________________________________________
 
 # dictionary of figures: the key is the figure name, while the value is the
 # list of names of the selected regions. Set it to None for Italy.
-figures = {'Lombardia' : ['Lombardia'],
-           'Veneto'    : ['Veneto'],
-           'Lazio'     : ['Lazio'],
-           'Piemonte'  : ['Piemonte'],
-           'Italia'    : None }
+figures = {#'Ile-de-France': ['Ile-de-France'],
+           'France': ['France']}

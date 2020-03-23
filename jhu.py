@@ -20,6 +20,7 @@ raw_data = {'path'    : 'data/JHU',
 # list of names of the selected regions. Set it to None for the World.
 figures = {'Italy' : ['Italy'],
            'France': ['France'],
+           'Spain' : ['Spain'],
            'Europe': ['Austria', 'Belgium', 'Bulgaria', 'Croatia', 'Cyprus',
                       'Czechia', 'Denmark', 'Estonia', 'Finland',
                       'France', 'Germany', 'Greece', 'Hungary', 'Ireland',

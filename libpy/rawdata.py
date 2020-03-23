@@ -52,8 +52,10 @@ class RawData:
 		# select reader
 		if self.data_fmt is 'jhu': # John Hopkins University
 			data = read_data_jhu(self)
-		if self.data_fmt is 'dpc': # Dipartimento della protezione Civile
+		elif self.data_fmt is 'dpc': # Dipartimento della protezione Civile
 			data = read_data_dpc(self)
+		elif self.data_fmt is 'ofr': # OpenCoVid19-fr
+			data = read_data_ofr(self)
 		else: # default (John Hopkins University)
 			data = read_data_jhu(self)
 		# unpack data
@@ -224,5 +226,78 @@ def read_data_dpc(rawdata):
 		intensive[region]+= [int(line[7])]
 	# output
 	return time, confirmed, recovered, deaths, active, intensive
+#_______________________________________________________________________________
+#
+def read_data_ofr(rawdata):
+	"""
+	"""
+	# modules
+	import os
+	import datetime as dt
+	# path to time-series files
+	timeseries_path = os.path.join(rawdata.path, 'dist')
+	# read confirmed cases
+	timeseries_file = os.path.join(timeseries_path, 'chiffres-cles.csv')
+	# initilize output
+	time      = []
+	confirmed = {}
+	recovered = {}
+	deaths    = {}
+	active    = {}
+	intensive = {}
+	# open file
+	f = open(timeseries_file, 'r')
+	# skip header
+	f.readline()
+	# loop on entries
+	for l in f:
+		# split line
+		line = l.rstrip('\r\n').rsplit(',')
+		line = ['0' if c == '' else c for c in line]
+		if ('REG' in line[2])|('FRA' in line[2]):
+			if ('et de la Sant' in line[9])|('ARS' in line[9]):
+				# get time
+				t = dt.datetime.strptime(line[0], '%Y-%m-%d')
+				t = dt.datetime(*t.timetuple()[:3])
+				if not(t in time): time.append(t)
+				# get region name
+				region = line[3]
+				# get confirmed
+				if not(region in confirmed.keys()): confirmed[region]=[]
+				confirmed[region]+= [0]*(len(time)-len(confirmed[region])-1)
+				confirmed[region]+= [int(line[4])]
+				# get deaths
+				if not(region in deaths.keys()): deaths[region]=[]
+				deaths[region]+= [0]*(len(time)-len(deaths[region])-1)
+				deaths[region]+= [int(line[5])]
+				# get intensive
+				if not(region in intensive.keys()): intensive[region]=[]
+				intensive[region]+= [0]*(len(time)-len(intensive[region])-1)
+				intensive[region]+= [int(line[6])]
+				# get recovered
+				if not(region in recovered.keys()): recovered[region]=[]
+				recovered[region]+= [0]*(len(time)-len(recovered[region])-1)
+				recovered[region]+= [int(line[8])]
+				# initialize active
+				if not(region in active.keys()): active[region]=[]
+	# fix_data
+	fix_data_ofr(time, confirmed)
+	fix_data_ofr(time, deaths)
+	fix_data_ofr(time, recovered)
+	# compute active
+	for region, data in active.iteritems():
+		active[region] = [c-r-d for c, r, d in zip(confirmed[region], deaths[region],  recovered[region])]
+	# output
+	return time, confirmed, recovered, deaths, active, intensive
+#_______________________________________________________________________________
+#
+def fix_data_ofr(time, data_dict):
+	for region, data in data_dict.iteritems():
+		for i, point in enumerate(data):
+			if i == 0: mindata = point
+			elif point < mindata:
+				data_dict[region][i]=mindata
+			else: mindata = point
+	return data
 #_______________________________________________________________________________
 #
